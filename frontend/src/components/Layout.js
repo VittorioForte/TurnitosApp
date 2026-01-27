@@ -24,6 +24,7 @@ const Layout = ({ children, onLogout }) => {
     { path: '/business-hours', icon: Clock, label: 'Horarios' },
     { path: '/appointments', icon: Calendar, label: 'Turnos' },
     { path: '/subscription', icon: CreditCard, label: 'Suscripción' },
+    { path: '/settings', icon: Settings, label: 'Configuración' },
   ];
 
   return (
