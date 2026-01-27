@@ -120,7 +120,28 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        {stats?.trial_days_left <= 3 && (
+        {stats?.show_renewal_warning && (
+          <Card className="border-2 border-red-400 bg-red-50">
+            <CardHeader>
+              <CardTitle className="text-red-800">¡Suscripción Por Vencer!</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-red-700 mb-4">
+                Tu suscripción vence en {stats.subscription_days_left} días. 
+                Renueva ahora para no perder acceso al sistema.
+              </p>
+              <button
+                onClick={() => window.location.href = '/subscription'}
+                data-testid="renew-subscription-button"
+                className="px-4 py-2 bg-red-600 text-white font-bold rounded-md hover:bg-red-700 border border-red-800"
+              >
+                Renovar Ahora
+              </button>
+            </CardContent>
+          </Card>
+        )}
+
+        {stats?.trial_days_left <= 3 && !stats?.subscription_active && (
           <Card className="border-2 border-yellow-400 bg-yellow-50">
             <CardHeader>
               <CardTitle className="text-yellow-800">Prueba Gratis Próxima a Vencer</CardTitle>
