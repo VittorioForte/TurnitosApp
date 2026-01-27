@@ -575,15 +575,103 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
     
     trial_days_left = max(0, (trial_ends - datetime.now(timezone.utc)).days)
     
+    # Verificar si la suscripción expiró
+    if current_user['subscription_active']:
+        sub_ends = current_user.get('subscription_ends')
+        if sub_ends:
+            if isinstance(sub_ends, str):
+                sub_ends = datetime.fromisoformat(sub_ends)
+            if datetime.now(timezone.utc) > sub_ends:
+                # Suscripción expirada, desactivarla
+                await db.users.update_one(
+                    {"user_id": current_user['user_id']},
+                    {"$set": {"subscription_active": False}}
+                )
+                current_user['subscription_active'] = False
+    
+    # Calcular días restantes de suscripción
+    subscription_days_left = 0
+    if current_user['subscription_active'] and current_user.get('subscription_ends'):
+        sub_ends = current_user['subscription_ends']
+        if isinstance(sub_ends, str):
+            sub_ends = datetime.fromisoformat(sub_ends)
+        subscription_days_left = max(0, (sub_ends - datetime.now(timezone.utc)).days)
+    
     return {
         "subscription_active": current_user['subscription_active'],
         "trial_days_left": trial_days_left,
         "subscription_ends": current_user.get('subscription_ends'),
-        "subscription_price": SUBSCRIPTION_PRICE
+        "subscription_price": SUBSCRIPTION_PRICE,
+        "subscription_days_left": subscription_days_left,
+        "show_renewal_warning": subscription_days_left <= 7 and subscription_days_left > 0
     }
 
-@api_router.post("/subscription/create-payment")
-async def create_payment_link(current_user: dict = Depends(get_current_user)):
+@api_router.post("/report-bug")
+async def report_bug(bug_report: BugReport, current_user: dict = Depends(get_current_user)):
+    try:
+        html_content = f"""
+        <h2>Nuevo Reporte de Error - Turnitos</h2>
+        <p><strong>De:</strong> {bug_report.name} ({bug_report.email})</p>
+        <p><strong>Negocio:</strong> {current_user['business_name']}</p>
+        <p><strong>Categoría:</strong> {bug_report.category}</p>
+        <p><strong>Asunto:</strong> {bug_report.subject}</p>
+        <hr>
+        <h3>Descripción:</h3>
+        <p>{bug_report.description}</p>
+        <hr>
+        <p><strong>URL:</strong> {bug_report.url}</p>
+        <p><strong>User ID:</strong> {current_user['user_id']}</p>
+        <p><strong>Fecha:</strong> {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}</p>
+        """
+        
+        if RESEND_API_KEY:
+            await asyncio.to_thread(resend.Emails.send, {
+                "from": "Turnitos <onboarding@resend.dev>",
+                "to": ["sitelab.webdev@gmail.com"],
+                "reply_to": bug_report.email,
+                "subject": f"[Turnitos Bug] {bug_report.subject}",
+                "html": html_content
+            })
+            return {"message": "Reporte enviado exitosamente"}
+        else:
+            logging.warning("RESEND_API_KEY no configurada, no se puede enviar el reporte")
+            raise HTTPException(status_code=500, detail="Servicio de email no configurado")
+    except Exception as e:
+        logging.error(f"Error enviando reporte: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error al enviar el reporte")
+
+@api_router.get("/user/custom-slug")
+async def get_custom_slug(current_user: dict = Depends(get_current_user)):
+    return {"custom_slug": current_user.get('custom_slug', current_user['user_id'])}
+
+@api_router.put("/user/custom-slug")
+async def update_custom_slug(slug_data: CustomSlugUpdate, current_user: dict = Depends(get_current_user)):
+    slug = slug_data.custom_slug.lower().strip()
+    
+    # Validaciones
+    if len(slug) < 3:
+        raise HTTPException(status_code=400, detail="El slug debe tener al menos 3 caracteres")
+    
+    if not slug.replace('-', '').isalnum():
+        raise HTTPException(status_code=400, detail="Solo se permiten letras, números y guiones")
+    
+    # Verificar si ya existe
+    existing = await db.users.find_one({
+        "custom_slug": slug,
+        "user_id": {"$ne": current_user['user_id']}
+    })
+    
+    if existing:
+        raise HTTPException(status_code=409, detail="Este slug ya está en uso")
+    
+    await db.users.update_one(
+        {"user_id": current_user['user_id']},
+        {"$set": {"custom_slug": slug}}
+    )
+    
+    return {"message": "Slug actualizado", "custom_slug": slug}
+
+@api_router.get("/public/{slug}/info")
     if not sdk:
         raise HTTPException(status_code=500, detail="MercadoPago no configurado")
     
