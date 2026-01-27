@@ -522,6 +522,7 @@ async def create_public_appointment(slug: str, appt_data: AppointmentCreate):
     if not user:
         raise HTTPException(status_code=404, detail="Negocio no encontrado")
     
+    user_id = user['user_id']
     service = await db.services.find_one({"service_id": appt_data.service_id}, {"_id": 0})
     if not service:
         raise HTTPException(status_code=404, detail="Servicio no encontrado")
