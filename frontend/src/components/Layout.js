@@ -6,6 +6,7 @@ import {
   Clock, 
   Calendar, 
   CreditCard,
+  Settings,
   LogOut,
   Menu,
   X
