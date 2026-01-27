@@ -84,6 +84,14 @@ class BusinessHoursUpdate(BaseModel):
     open_time: Optional[str] = None
     close_time: Optional[str] = None
 
+class ClosedDateCreate(BaseModel):
+    date: str
+
+class ClosedDate(BaseModel):
+    user_id: str
+    date: str
+    reason: Optional[str] = None
+
 class AppointmentCreate(BaseModel):
     service_id: str
     client_name: str
