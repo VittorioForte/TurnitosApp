@@ -56,21 +56,23 @@ const Services = () => {
     }
   };
 
-  const handleDelete = async (serviceId, e) => {
-    if (e) e.stopPropagation();
-    
-    const confirmed = window.confirm('¿Desactivar este servicio?');
-    if (!confirmed) return;
+  const handleDelete = async (serviceId) => {
+    setDeletingServiceId(serviceId);
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingServiceId) return;
     
     try {
-      const response = await api.delete(`/services/${serviceId}`);
-      console.log('Delete response:', response.data);
+      await api.delete(`/services/${deletingServiceId}`);
       toast.success('Servicio desactivado');
+      setDeletingServiceId(null);
       await loadServices();
     } catch (error) {
       console.error('Error al desactivar servicio:', error);
       const message = error.response?.data?.detail || 'Error al desactivar servicio';
       toast.error(message);
+      setDeletingServiceId(null);
     }
   };
 
