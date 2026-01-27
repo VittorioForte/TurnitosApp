@@ -332,7 +332,10 @@ async def update_business_hours(hours_list: List[BusinessHoursUpdate], current_u
 @api_router.get("/appointments")
 async def get_appointments(current_user: dict = Depends(get_current_user)):
     await check_subscription(current_user)
-    appointments = await db.appointments.find({"user_id": current_user['user_id']}, {"_id": 0}).to_list(1000)
+    appointments = await db.appointments.find({
+        "user_id": current_user['user_id'],
+        "status": {"$ne": "cancelled"}
+    }, {"_id": 0}).to_list(1000)
     return sorted(appointments, key=lambda x: (x['date'], x['time']), reverse=True)
 
 @api_router.post("/appointments/admin")
