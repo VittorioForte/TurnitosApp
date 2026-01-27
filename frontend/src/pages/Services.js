@@ -206,7 +206,7 @@ const Services = () => {
                       <Edit2 size={16} />
                     </button>
                     <button
-                      onClick={() => handleDelete(service.service_id)}
+                      onClick={(e) => handleDelete(service.service_id, e)}
                       data-testid={`delete-service-${service.service_id}`}
                       className="text-red-600 hover:text-red-700 p-1"
                     >
