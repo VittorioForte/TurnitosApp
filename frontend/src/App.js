@@ -58,6 +58,12 @@ function App() {
         <Route path="/settings" element={
           token ? <Layout onLogout={handleLogout}><AdminSettings /></Layout> : <Navigate to="/login" />
         } />
+        <Route path="/report-bug" element={
+          token ? <Layout onLogout={handleLogout}><ReportBug /></Layout> : <Navigate to="/login" />
+        } />
+        <Route path="/customize-link" element={
+          token ? <Layout onLogout={handleLogout}><CustomizeLink /></Layout> : <Navigate to="/login" />
+        } />
       </Routes>
     </BrowserRouter>
   );
