@@ -50,6 +50,8 @@ const CustomizeLink = () => {
       await api.put('/user/custom-slug', { custom_slug: customSlug });
       setCurrentSlug(customSlug);
       toast.success('Link personalizado actualizado');
+      // Disparar evento para actualizar otras páginas
+      window.dispatchEvent(new CustomEvent('slugUpdated', { detail: { slug: customSlug } }));
     } catch (error) {
       if (error.response?.status === 409) {
         toast.error('Este slug ya está en uso. Elige otro.');
