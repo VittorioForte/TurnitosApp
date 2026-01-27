@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { CreditCard, Calendar, CheckCircle2, AlertCircle } from 'lucide-react';
+import { CreditCard, Calendar, CheckCircle2, AlertCircle, ExternalLink } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import api from '../utils/api';
@@ -8,9 +8,25 @@ import api from '../utils/api';
 const Subscription = () => {
   const [subStatus, setSubStatus] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [processingPayment, setProcessingPayment] = useState(false);
 
   useEffect(() => {
     loadSubscriptionStatus();
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const status = urlParams.get('status');
+    
+    if (status === 'success') {
+      toast.success('¡Pago procesado! Tu suscripción se activará en breve.');
+      window.history.replaceState({}, '', '/subscription');
+      setTimeout(() => loadSubscriptionStatus(), 3000);
+    } else if (status === 'failure') {
+      toast.error('El pago no pudo ser procesado. Intenta nuevamente.');
+      window.history.replaceState({}, '', '/subscription');
+    } else if (status === 'pending') {
+      toast.info('Pago pendiente de confirmación.');
+      window.history.replaceState({}, '', '/subscription');
+    }
   }, []);
 
   const loadSubscriptionStatus = async () => {
@@ -24,8 +40,15 @@ const Subscription = () => {
     }
   };
 
-  const handleActivateSubscription = () => {
-    toast.info('La integración con MercadoPago está lista. Configura tu cuenta para activar pagos.');
+  const handleActivateSubscription = async () => {
+    setProcessingPayment(true);
+    try {
+      const response = await api.post('/subscription/create-payment');
+      window.location.href = response.data.init_point;
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error al crear link de pago');
+      setProcessingPayment(false);
+    }
   };
 
   if (loading) {
@@ -60,7 +83,7 @@ const Subscription = () => {
                   </p>
                   {subStatus.subscription_ends && (
                     <p className="text-sm text-green-700 mt-1">
-                      Vence el: {new Date(subStatus.subscription_ends).toLocaleDateString()}
+                      Vence el: {new Date(subStatus.subscription_ends).toLocaleDateString('es-AR')}
                     </p>
                   )}
                 </div>
@@ -94,7 +117,7 @@ const Subscription = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-bold">$999</span>
+              <span className="text-4xl font-bold">${subStatus?.subscription_price || 11999}</span>
               <span className="text-zinc-600">/mes</span>
             </div>
             <ul className="space-y-2 text-sm">
@@ -122,11 +145,13 @@ const Subscription = () => {
             {!subStatus?.subscription_active && (
               <Button
                 onClick={handleActivateSubscription}
+                disabled={processingPayment}
                 data-testid="activate-subscription-button"
-                className="w-full bg-[#FFD60A] text-black hover:bg-[#EAB308] font-bold uppercase hard-shadow-sm border border-black"
+                className="w-full bg-[#FFD60A] text-black hover:bg-[#EAB308] font-bold uppercase hard-shadow-sm border border-black active:translate-x-[1px] active:translate-y-[1px] active:shadow-none"
               >
                 <CreditCard size={20} className="mr-2" />
-                Activar Suscripción
+                {processingPayment ? 'Redirigiendo...' : 'Pagar con MercadoPago'}
+                <ExternalLink size={16} className="ml-2" />
               </Button>
             )}
           </CardContent>
@@ -137,10 +162,18 @@ const Subscription = () => {
             <CardTitle>Información de Pago</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-zinc-600">
+            <p className="text-sm text-zinc-600 mb-3">
               Los pagos se procesan de forma segura a través de MercadoPago.
               Tu información está protegida y nunca se almacena en nuestros servidores.
             </p>
+            <div className="flex items-center gap-2 text-xs text-zinc-500">
+              <CheckCircle2 size={14} className="text-green-600" />
+              <span>Pago único mensual - Sin renovación automática</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-zinc-500 mt-1">
+              <CheckCircle2 size={14} className="text-green-600" />
+              <span>Activación instantánea tras confirmación de pago</span>
+            </div>
           </CardContent>
         </Card>
       </div>
