@@ -241,6 +241,35 @@ const Services = () => {
           ))}
         </div>
       )}
+
+      <Dialog open={!!deletingServiceId} onOpenChange={(open) => !open && setDeletingServiceId(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>¿Desactivar servicio?</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-zinc-600">
+              Este servicio dejará de mostrarse en la página pública. Los turnos existentes no se afectarán.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setDeletingServiceId(null)}
+                className="border-zinc-300"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={confirmDelete}
+                className="bg-red-600 text-white hover:bg-red-700"
+                data-testid="confirm-delete-service"
+              >
+                Desactivar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
