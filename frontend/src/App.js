@@ -11,6 +11,8 @@ import Appointments from './pages/Appointments';
 import Subscription from './pages/Subscription';
 import PublicBooking from './pages/PublicBooking';
 import AdminSettings from './pages/AdminSettings';
+import ReportBug from './pages/ReportBug';
+import CustomizeLink from './pages/CustomizeLink';
 import Layout from './components/Layout';
 
 function App() {
