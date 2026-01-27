@@ -21,6 +21,8 @@ const Services = () => {
     price: 0,
   });
 
+  const [deletingServiceId, setDeletingServiceId] = useState(null);
+
   useEffect(() => {
     loadServices();
   }, []);
