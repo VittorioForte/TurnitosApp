@@ -349,7 +349,8 @@ async def create_appointment_admin(appt_data: AppointmentCreate, current_user: d
     }
     
     await db.appointments.insert_one(appointment)
-    return appointment
+    # Return appointment without MongoDB's _id field
+    return {k: v for k, v in appointment.items() if k != '_id'}
 
 @api_router.delete("/appointments/{appointment_id}")
 async def cancel_appointment(appointment_id: str, current_user: dict = Depends(get_current_user)):
