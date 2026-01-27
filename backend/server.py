@@ -14,6 +14,7 @@ from passlib.context import CryptContext
 from jose import jwt, JWTError
 import resend
 import asyncio
+import mercadopago
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
