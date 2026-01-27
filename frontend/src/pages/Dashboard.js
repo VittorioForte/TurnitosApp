@@ -7,10 +7,12 @@ import api from '../utils/api';
 const Dashboard = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [publicSlug, setPublicSlug] = useState('');
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
   useEffect(() => {
     loadStats();
+    loadPublicSlug();
   }, []);
 
   const loadStats = async () => {
@@ -22,6 +24,19 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadPublicSlug = async () => {
+    try {
+      const response = await api.get('/user/custom-slug');
+      setPublicSlug(response.data.custom_slug || user.user_id);
+    } catch (error) {
+      setPublicSlug(user.user_id);
+    }
+  };
+
+  const getPublicUrl = () => {
+    return `${window.location.origin}/book/${publicSlug}`;
   };
 
   const statCards = [
