@@ -26,7 +26,9 @@ const Layout = ({ children, onLogout }) => {
     { path: '/business-hours', icon: Clock, label: 'Horarios' },
     { path: '/appointments', icon: Calendar, label: 'Turnos' },
     { path: '/subscription', icon: CreditCard, label: 'Suscripción' },
+    { path: '/customize-link', icon: LinkIcon, label: 'Link Público' },
     { path: '/settings', icon: Settings, label: 'Configuración' },
+    { path: '/report-bug', icon: Bug, label: 'Reportar Error' },
   ];
 
   return (
