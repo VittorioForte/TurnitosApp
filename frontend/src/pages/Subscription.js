@@ -86,7 +86,22 @@ const Subscription = () => {
                       Vence el: {new Date(subStatus.subscription_ends).toLocaleDateString('es-AR')}
                     </p>
                   )}
+                  {subStatus.subscription_days_left !== undefined && (
+                    <p className="text-sm text-green-700 mt-1">
+                      Días restantes: {subStatus.subscription_days_left}
+                    </p>
+                  )}
                 </div>
+                {subStatus.show_renewal_warning && (
+                  <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-red-800 font-semibold">
+                      ¡Tu suscripción vence en {subStatus.subscription_days_left} días!
+                    </p>
+                    <p className="text-sm text-red-700 mt-1">
+                      Renueva ahora para no perder acceso al sistema.
+                    </p>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="space-y-4">
