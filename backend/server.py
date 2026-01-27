@@ -92,6 +92,17 @@ class ClosedDate(BaseModel):
     date: str
     reason: Optional[str] = None
 
+class BugReport(BaseModel):
+    name: str
+    email: EmailStr
+    category: str
+    subject: str
+    description: str
+    url: str
+
+class CustomSlugUpdate(BaseModel):
+    custom_slug: str
+
 class AppointmentCreate(BaseModel):
     service_id: str
     client_name: str
