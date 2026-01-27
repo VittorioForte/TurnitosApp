@@ -140,6 +140,14 @@ const CustomizeLink = () => {
                 </p>
               </div>
 
+              {currentSlug !== user.user_id && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-sm text-blue-800">
+                    <strong>Link actual:</strong> {window.location.origin}/book/{currentSlug}
+                  </p>
+                </div>
+              )}
+
               <Button
                 onClick={handleSave}
                 disabled={saving || customSlug === currentSlug}
