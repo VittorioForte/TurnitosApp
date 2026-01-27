@@ -485,7 +485,8 @@ async def create_public_appointment(user_id: str, appt_data: AppointmentCreate):
     asyncio.create_task(send_email_async(appt_data.client_email, "Confirmación de turno", client_html))
     asyncio.create_task(send_email_async(user['email'], "Nuevo turno reservado", owner_html))
     
-    return appointment
+    # Return appointment without MongoDB's _id field
+    return {k: v for k, v in appointment.items() if k != '_id'}
 
 @api_router.get("/subscription/status")
 async def get_subscription_status(current_user: dict = Depends(get_current_user)):
