@@ -28,7 +28,7 @@ const Services = () => {
   const loadServices = async () => {
     try {
       const response = await api.get('/services');
-      setServices(response.data);
+      setServices(response.data.filter(s => s.active));
     } catch (error) {
       toast.error('Error al cargar servicios');
     } finally {
@@ -91,8 +91,8 @@ const Services = () => {
   }
 
   return (
-    <div data-testid="services-page">
-      <div className="flex justify-between items-center mb-8">
+    <div data-testid="services-page" className="max-w-7xl">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8">
         <div>
           <h1 className="text-4xl font-bold mb-2" data-testid="services-title">SERVICIOS</h1>
           <p className="text-zinc-600">Gestiona los servicios de tu negocio</p>
@@ -104,13 +104,13 @@ const Services = () => {
           <DialogTrigger asChild>
             <Button
               data-testid="add-service-button"
-              className="bg-[#FFD60A] text-black hover:bg-[#EAB308] font-bold uppercase hard-shadow-sm border border-black"
+              className="bg-[#FFD60A] text-black hover:bg-[#EAB308] font-bold uppercase hard-shadow-sm border border-black active:translate-x-[1px] active:translate-y-[1px] active:shadow-none"
             >
               <Plus size={20} className="mr-2" />
               Nuevo Servicio
             </Button>
           </DialogTrigger>
-          <DialogContent data-testid="service-dialog">
+          <DialogContent data-testid="service-dialog" className="max-w-md">
             <DialogHeader>
               <DialogTitle>
                 {editingService ? 'Editar Servicio' : 'Nuevo Servicio'}
@@ -125,6 +125,7 @@ const Services = () => {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
                   data-testid="service-name-input"
+                  className="focus:ring-[#FFD60A] focus:border-[#FFD60A]"
                 />
               </div>
               <div>
@@ -135,6 +136,7 @@ const Services = () => {
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   required
                   data-testid="service-description-input"
+                  className="focus:ring-[#FFD60A] focus:border-[#FFD60A] min-h-20"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -147,6 +149,7 @@ const Services = () => {
                     onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) })}
                     required
                     data-testid="service-duration-input"
+                    className="focus:ring-[#FFD60A] focus:border-[#FFD60A]"
                   />
                 </div>
                 <div>
@@ -159,13 +162,14 @@ const Services = () => {
                     onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
                     required
                     data-testid="service-price-input"
+                    className="focus:ring-[#FFD60A] focus:border-[#FFD60A]"
                   />
                 </div>
               </div>
               <Button
                 type="submit"
                 data-testid="service-submit-button"
-                className="w-full bg-[#FFD60A] text-black hover:bg-[#EAB308] font-bold uppercase hard-shadow-sm border border-black"
+                className="w-full bg-[#FFD60A] text-black hover:bg-[#EAB308] font-bold uppercase hard-shadow-sm border border-black active:translate-x-[1px] active:translate-y-[1px] active:shadow-none"
               >
                 {editingService ? 'Actualizar' : 'Crear'}
               </Button>
@@ -175,7 +179,7 @@ const Services = () => {
       </div>
 
       {services.length === 0 ? (
-        <Card data-testid="empty-services-message">
+        <Card data-testid="empty-services-message" className="border-2 border-zinc-200">
           <CardContent className="py-12 text-center">
             <p className="text-zinc-600">No tienes servicios creados aún</p>
           </CardContent>
@@ -185,24 +189,24 @@ const Services = () => {
           {services.map((service) => (
             <Card
               key={service.service_id}
-              className="border-2 border-zinc-200"
+              className="border-2 border-zinc-200 hover:border-[#FFD60A] transition-colors"
               data-testid={`service-card-${service.service_id}`}
             >
-              <CardHeader>
-                <CardTitle className="flex justify-between items-start">
-                  <span data-testid={`service-name-${service.service_id}`}>{service.name}</span>
-                  <div className="flex gap-2">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex justify-between items-start gap-2">
+                  <span className="flex-1 break-words" data-testid={`service-name-${service.service_id}`}>{service.name}</span>
+                  <div className="flex gap-2 flex-shrink-0">
                     <button
                       onClick={() => openEditDialog(service)}
                       data-testid={`edit-service-${service.service_id}`}
-                      className="text-zinc-600 hover:text-zinc-900"
+                      className="text-zinc-600 hover:text-zinc-900 p-1"
                     >
                       <Edit2 size={16} />
                     </button>
                     <button
                       onClick={() => handleDelete(service.service_id)}
                       data-testid={`delete-service-${service.service_id}`}
-                      className="text-red-600 hover:text-red-700"
+                      className="text-red-600 hover:text-red-700 p-1"
                     >
                       <Trash2 size={16} />
                     </button>
@@ -210,12 +214,12 @@ const Services = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-zinc-600 mb-4" data-testid={`service-description-${service.service_id}`}>
+                <p className="text-sm text-zinc-600 mb-4 line-clamp-2" data-testid={`service-description-${service.service_id}`}>
                   {service.description}
                 </p>
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between items-center text-sm pt-2 border-t border-zinc-100">
                   <span className="text-zinc-600">
-                    Duración: <strong data-testid={`service-duration-${service.service_id}`}>{service.duration_minutes} min</strong>
+                    <strong data-testid={`service-duration-${service.service_id}`}>{service.duration_minutes} min</strong>
                   </span>
                   <span className="text-[#FFD60A] font-bold text-lg" data-testid={`service-price-${service.service_id}`}>
                     ${service.price}
