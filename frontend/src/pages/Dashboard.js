@@ -13,6 +13,17 @@ const Dashboard = () => {
   useEffect(() => {
     loadStats();
     loadPublicSlug();
+
+    // Escuchar cambios en el slug
+    const handleSlugUpdate = (event) => {
+      setPublicSlug(event.detail.slug);
+    };
+
+    window.addEventListener('slugUpdated', handleSlugUpdate);
+
+    return () => {
+      window.removeEventListener('slugUpdated', handleSlugUpdate);
+    };
   }, []);
 
   const loadStats = async () => {
