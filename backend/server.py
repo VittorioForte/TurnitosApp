@@ -337,6 +337,45 @@ async def update_business_hours(hours_list: List[BusinessHoursUpdate], current_u
     
     return {"message": "Horarios actualizados"}
 
+@api_router.get("/closed-dates")
+async def get_closed_dates(current_user: dict = Depends(get_current_user)):
+    await check_subscription(current_user)
+    closed_dates = await db.closed_dates.find({"user_id": current_user['user_id']}, {"_id": 0}).to_list(1000)
+    return closed_dates
+
+@api_router.post("/closed-dates")
+async def create_closed_date(closed_date: ClosedDateCreate, current_user: dict = Depends(get_current_user)):
+    await check_subscription(current_user)
+    
+    existing = await db.closed_dates.find_one({
+        "user_id": current_user['user_id'],
+        "date": closed_date.date
+    })
+    
+    if existing:
+        raise HTTPException(status_code=400, detail="Esta fecha ya está marcada como cerrada")
+    
+    await db.closed_dates.insert_one({
+        "user_id": current_user['user_id'],
+        "date": closed_date.date
+    })
+    
+    return {"message": "Día cerrado agregado"}
+
+@api_router.delete("/closed-dates/{date}")
+async def delete_closed_date(date: str, current_user: dict = Depends(get_current_user)):
+    await check_subscription(current_user)
+    
+    result = await db.closed_dates.delete_one({
+        "user_id": current_user['user_id'],
+        "date": date
+    })
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Fecha no encontrada")
+    
+    return {"message": "Día cerrado eliminado"}
+
 @api_router.get("/appointments")
 async def get_appointments(current_user: dict = Depends(get_current_user)):
     await check_subscription(current_user)
