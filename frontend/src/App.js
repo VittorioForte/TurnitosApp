@@ -53,6 +53,9 @@ function App() {
         <Route path="/subscription" element={
           token ? <Layout onLogout={handleLogout}><Subscription /></Layout> : <Navigate to="/login" />
         } />
+        <Route path="/settings" element={
+          token ? <Layout onLogout={handleLogout}><AdminSettings /></Layout> : <Navigate to="/login" />
+        } />
       </Routes>
     </BrowserRouter>
   );
