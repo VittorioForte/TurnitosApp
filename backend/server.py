@@ -446,6 +446,15 @@ async def get_available_slots(user_id: str, service_id: str, date: str):
     if not service:
         raise HTTPException(status_code=404, detail="Servicio no encontrado")
     
+    # Verificar si la fecha está en días cerrados
+    is_closed = await db.closed_dates.find_one({
+        "user_id": user_id,
+        "date": date
+    })
+    
+    if is_closed:
+        return {"slots": [], "message": "Día cerrado"}
+    
     date_obj = datetime.strptime(date, "%Y-%m-%d")
     day_of_week = date_obj.weekday()
     
