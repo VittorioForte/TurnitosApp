@@ -117,13 +117,13 @@ const Dashboard = () => {
               <input
                 type="text"
                 readOnly
-                value={`${window.location.origin}/book/${user.user_id}`}
+                value={getPublicUrl()}
                 data-testid="public-booking-link"
                 className="flex-1 px-3 py-2 border border-zinc-300 rounded-md text-sm bg-zinc-50"
               />
               <button
                 onClick={() => {
-                  navigator.clipboard.writeText(`${window.location.origin}/book/${user.user_id}`);
+                  navigator.clipboard.writeText(getPublicUrl());
                   toast.success('Link copiado');
                 }}
                 data-testid="copy-link-button"
