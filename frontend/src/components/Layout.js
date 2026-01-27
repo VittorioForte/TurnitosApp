@@ -7,6 +7,8 @@ import {
   Calendar, 
   CreditCard,
   Settings,
+  Bug,
+  Link as LinkIcon,
   LogOut,
   Menu,
   X
