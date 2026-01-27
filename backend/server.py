@@ -508,8 +508,132 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
     return {
         "subscription_active": current_user['subscription_active'],
         "trial_days_left": trial_days_left,
-        "subscription_ends": current_user.get('subscription_ends')
+        "subscription_ends": current_user.get('subscription_ends'),
+        "subscription_price": SUBSCRIPTION_PRICE
     }
+
+@api_router.post("/subscription/create-payment")
+async def create_payment_link(current_user: dict = Depends(get_current_user)):
+    if not sdk:
+        raise HTTPException(status_code=500, detail="MercadoPago no configurado")
+    
+    try:
+        preference_data = {
+            "items": [
+                {
+                    "title": f"Suscripción Mensual - {current_user['business_name']}",
+                    "quantity": 1,
+                    "unit_price": SUBSCRIPTION_PRICE,
+                    "currency_id": "ARS"
+                }
+            ],
+            "payer": {
+                "email": current_user['email'],
+                "name": current_user['business_name']
+            },
+            "back_urls": {
+                "success": f"{os.environ.get('FRONTEND_URL', 'http://localhost:3000')}/subscription?status=success",
+                "failure": f"{os.environ.get('FRONTEND_URL', 'http://localhost:3000')}/subscription?status=failure",
+                "pending": f"{os.environ.get('FRONTEND_URL', 'http://localhost:3000')}/subscription?status=pending"
+            },
+            "auto_return": "approved",
+            "external_reference": current_user['user_id'],
+            "notification_url": f"{os.environ.get('BACKEND_URL', 'http://localhost:8001')}/api/webhooks/mercadopago"
+        }
+        
+        preference_response = sdk.preference().create(preference_data)
+        preference = preference_response["response"]
+        
+        return {
+            "init_point": preference["init_point"],
+            "preference_id": preference["id"]
+        }
+    except Exception as e:
+        logging.error(f"Error creando preference: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error al crear link de pago: {str(e)}")
+
+@api_router.post("/webhooks/mercadopago")
+async def mercadopago_webhook(request: Request):
+    try:
+        body = await request.json()
+        logging.info(f"Webhook recibido: {body}")
+        
+        if body.get("type") == "payment":
+            payment_id = body.get("data", {}).get("id")
+            
+            if not payment_id:
+                return {"status": "no payment id"}
+            
+            if not sdk:
+                logging.error("SDK de MercadoPago no configurado")
+                return {"status": "sdk not configured"}
+            
+            payment_info = sdk.payment().get(payment_id)
+            payment = payment_info["response"]
+            
+            logging.info(f"Pago recibido: {payment}")
+            
+            if payment["status"] == "approved":
+                user_id = payment.get("external_reference")
+                
+                if user_id:
+                    subscription_ends = datetime.now(timezone.utc) + timedelta(days=30)
+                    
+                    await db.users.update_one(
+                        {"user_id": user_id},
+                        {
+                            "$set": {
+                                "subscription_active": True,
+                                "subscription_ends": subscription_ends.isoformat(),
+                                "last_payment_id": payment_id,
+                                "last_payment_date": datetime.now(timezone.utc).isoformat(),
+                                "last_payment_amount": payment["transaction_amount"]
+                            }
+                        }
+                    )
+                    
+                    user = await db.users.find_one({"user_id": user_id}, {"_id": 0})
+                    
+                    if user and RESEND_API_KEY:
+                        confirmation_html = f"""
+                        <h2>¡Pago Confirmado!</h2>
+                        <p>Hola {user['business_name']},</p>
+                        <p>Tu suscripción ha sido activada exitosamente.</p>
+                        <ul>
+                            <li><strong>Monto:</strong> ${payment['transaction_amount']}</li>
+                            <li><strong>Válida hasta:</strong> {subscription_ends.strftime('%d/%m/%Y')}</li>
+                        </ul>
+                        <p>¡Gracias por confiar en Turnitos!</p>
+                        """
+                        asyncio.create_task(send_email_async(
+                            user['email'],
+                            "Suscripción Activada - Turnitos",
+                            confirmation_html
+                        ))
+                    
+                    logging.info(f"Suscripción activada para user {user_id}")
+        
+        return {"status": "ok"}
+    except Exception as e:
+        logging.error(f"Error procesando webhook: {str(e)}")
+        return {"status": "error", "message": str(e)}
+
+@api_router.get("/subscription/check-payment/{payment_id}")
+async def check_payment_status(payment_id: str, current_user: dict = Depends(get_current_user)):
+    if not sdk:
+        raise HTTPException(status_code=500, detail="MercadoPago no configurado")
+    
+    try:
+        payment_info = sdk.payment().get(payment_id)
+        payment = payment_info["response"]
+        
+        return {
+            "status": payment["status"],
+            "status_detail": payment.get("status_detail"),
+            "external_reference": payment.get("external_reference")
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al verificar pago: {str(e)}")
 
 app.include_router(api_router)
 
