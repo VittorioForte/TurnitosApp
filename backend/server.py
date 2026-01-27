@@ -37,6 +37,14 @@ RESEND_API_KEY = os.environ.get('RESEND_API_KEY', '')
 if RESEND_API_KEY:
     resend.api_key = RESEND_API_KEY
 
+MERCADOPAGO_ACCESS_TOKEN = os.environ.get('MERCADOPAGO_ACCESS_TOKEN', '')
+SUBSCRIPTION_PRICE = float(os.environ.get('SUBSCRIPTION_PRICE', '11999'))
+
+if MERCADOPAGO_ACCESS_TOKEN:
+    sdk = mercadopago.SDK(MERCADOPAGO_ACCESS_TOKEN)
+else:
+    sdk = None
+
 class UserRegister(BaseModel):
     email: EmailStr
     password: str
