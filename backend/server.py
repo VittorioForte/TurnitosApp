@@ -436,12 +436,17 @@ async def cancel_appointment(appointment_id: str, current_user: dict = Depends(g
     
     return {"message": "Turno cancelado"}
 
-@api_router.get("/public/{user_id}/info")
-async def get_public_info(user_id: str):
-    user = await db.users.find_one({"user_id": user_id}, {"_id": 0, "password_hash": 0})
+@api_router.get("/public/{slug}/info")
+async def get_public_info(slug: str):
+    # Intentar primero por custom_slug, luego por user_id
+    user = await db.users.find_one({"custom_slug": slug}, {"_id": 0, "password_hash": 0})
+    if not user:
+        user = await db.users.find_one({"user_id": slug}, {"_id": 0, "password_hash": 0})
+    
     if not user:
         raise HTTPException(status_code=404, detail="Negocio no encontrado")
     
+    user_id = user['user_id']
     services = await db.services.find({"user_id": user_id, "active": True}, {"_id": 0}).to_list(1000)
     hours = await db.business_hours.find({"user_id": user_id}, {"_id": 0}).to_list(7)
     
@@ -451,8 +456,16 @@ async def get_public_info(user_id: str):
         "business_hours": sorted(hours, key=lambda x: x['day_of_week'])
     }
 
-@api_router.get("/public/{user_id}/available-slots")
-async def get_available_slots(user_id: str, service_id: str, date: str):
+@api_router.get("/public/{slug}/available-slots")
+async def get_available_slots(slug: str, service_id: str, date: str):
+    # Obtener user_id desde slug
+    user = await db.users.find_one({"custom_slug": slug}, {"_id": 0})
+    if not user:
+        user = await db.users.find_one({"user_id": slug}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="Negocio no encontrado")
+    
+    user_id = user['user_id']
     service = await db.services.find_one({"service_id": service_id, "user_id": user_id}, {"_id": 0})
     if not service:
         raise HTTPException(status_code=404, detail="Servicio no encontrado")
@@ -500,9 +513,12 @@ async def get_available_slots(user_id: str, service_id: str, date: str):
     
     return {"slots": slots}
 
-@api_router.post("/public/{user_id}/appointments")
-async def create_public_appointment(user_id: str, appt_data: AppointmentCreate):
-    user = await db.users.find_one({"user_id": user_id}, {"_id": 0})
+@api_router.post("/public/{slug}/appointments")
+async def create_public_appointment(slug: str, appt_data: AppointmentCreate):
+    # Obtener user_id desde slug
+    user = await db.users.find_one({"custom_slug": slug}, {"_id": 0})
+    if not user:
+        user = await db.users.find_one({"user_id": slug}, {"_id": 0})
     if not user:
         raise HTTPException(status_code=404, detail="Negocio no encontrado")
     
