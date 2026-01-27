@@ -10,6 +10,7 @@ import BusinessHours from './pages/BusinessHours';
 import Appointments from './pages/Appointments';
 import Subscription from './pages/Subscription';
 import PublicBooking from './pages/PublicBooking';
+import AdminSettings from './pages/AdminSettings';
 import Layout from './components/Layout';
 
 function App() {
