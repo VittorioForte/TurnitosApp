@@ -688,7 +688,8 @@ async def update_custom_slug(slug_data: CustomSlugUpdate, current_user: dict = D
     
     return {"message": "Slug actualizado", "custom_slug": slug}
 
-@api_router.get("/public/{slug}/info")
+@api_router.post("/subscription/create-payment")
+async def create_payment(current_user: dict = Depends(get_current_user)):
     if not sdk:
         raise HTTPException(status_code=500, detail="MercadoPago no configurado")
     
