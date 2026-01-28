@@ -716,13 +716,13 @@ async def create_payment(current_user: dict = Depends(get_current_user)):
                 "name": current_user['business_name']
             },
             "back_urls": {
-                "success": f"{os.environ.get('FRONTEND_URL', 'http://localhost:3000')}/subscription?status=success",
-                "failure": f"{os.environ.get('FRONTEND_URL', 'http://localhost:3000')}/subscription?status=failure",
-                "pending": f"{os.environ.get('FRONTEND_URL', 'http://localhost:3000')}/subscription?status=pending"
+                "success": f"{os.environ['FRONTEND_URL']}/subscription?status=success",
+                "failure": f"{os.environ['FRONTEND_URL']}/subscription?status=failure",
+                "pending": f"{os.environ['FRONTEND_URL']}/subscription?status=pending"
             },
             "auto_return": "approved",
             "external_reference": current_user['user_id'],
-            "notification_url": f"{os.environ.get('BACKEND_URL', 'http://localhost:8001')}/api/webhooks/mercadopago"
+            "notification_url": f"{os.environ['BACKEND_URL']}/api/webhooks/mercadopago"
         }
         
         preference_response = sdk.preference().create(preference_data)
