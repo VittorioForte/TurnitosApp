@@ -336,8 +336,11 @@ async def get_business_hours(current_user: dict = Depends(get_current_user)):
 async def update_business_hours(hours_list: List[BusinessHoursUpdate], current_user: dict = Depends(get_current_user)):
     await check_subscription(current_user)
     
-    for hours in hours_list:
-        await db.business_hours.update_one(
+    # Usar bulk_write para optimizar las actualizaciones
+    from pymongo import UpdateOne
+    
+    operations = [
+        UpdateOne(
             {"user_id": current_user['user_id'], "day_of_week": hours.day_of_week},
             {"$set": {
                 "is_open": hours.is_open,
@@ -345,6 +348,11 @@ async def update_business_hours(hours_list: List[BusinessHoursUpdate], current_u
                 "close_time": hours.close_time
             }}
         )
+        for hours in hours_list
+    ]
+    
+    if operations:
+        await db.business_hours.bulk_write(operations)
     
     return {"message": "Horarios actualizados"}
 
