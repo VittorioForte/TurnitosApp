@@ -36,7 +36,7 @@ const PublicBooking = () => {
 
   const loadBusinessInfo = async () => {
     try {
-      const response = await axios.get(`${API}/public/${userId}/info`);
+      const response = await axios.get(`${BACKEND_URL}/api/public/${userId}/info`);
       setBusinessInfo(response.data);
     } catch (error) {
       toast.error('No se pudo cargar la información del negocio');
@@ -47,7 +47,7 @@ const PublicBooking = () => {
 
   const loadAvailableSlots = async () => {
     try {
-      const response = await axios.get(`${API}/public/${userId}/available-slots`, {
+      const response = await axios.get(`${BACKEND_URL}/api/public/${userId}/available-slots`, {
         params: {
           service_id: selectedService.service_id,
           date: selectedDate,
@@ -63,7 +63,7 @@ const PublicBooking = () => {
   const handleBooking = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`${API}/public/${userId}/appointments`, {
+      await axios.post(`${BACKEND_URL}/api/public/${userId}/appointments`, {
         service_id: selectedService.service_id,
         client_name: clientName,
         client_phone: clientPhone,
