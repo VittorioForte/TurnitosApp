@@ -573,21 +573,38 @@ async def create_public_appointment(slug: str, appt_data: AppointmentCreate):
     if not service:
         raise HTTPException(status_code=404, detail="Servicio no encontrado")
     
-    existing = await db.appointments.find_one({
+    # Verificar disponibilidad considerando la duración del servicio
+    service_duration = service.get('duration_minutes', 30)
+    proposed_start = datetime.strptime(appt_data.time, "%H:%M")
+    proposed_end = proposed_start + timedelta(minutes=service_duration)
+    
+    # Obtener todos los turnos del día
+    existing_appointments = await db.appointments.find({
         "user_id": user_id,
         "date": appt_data.date,
-        "time": appt_data.time,
         "status": {"$ne": "cancelled"}
-    })
+    }, {"_id": 0}).to_list(100)
     
-    if existing:
-        raise HTTPException(status_code=400, detail="Este horario ya está reservado")
+    # Verificar solapamiento
+    for existing in existing_appointments:
+        existing_service = await db.services.find_one({"service_id": existing["service_id"]}, {"_id": 0})
+        if existing_service:
+            existing_duration = existing_service.get('duration_minutes', 30)
+            existing_start = datetime.strptime(existing["time"], "%H:%M")
+            existing_end = existing_start + timedelta(minutes=existing_duration)
+            
+            # Verificar solapamiento
+            if (existing_start <= proposed_start < existing_end or
+                existing_start < proposed_end <= existing_end or
+                (proposed_start <= existing_start and proposed_end >= existing_end)):
+                raise HTTPException(status_code=400, detail="Este horario ya está reservado o se solapa con otro turno")
     
     appointment = {
         "appointment_id": str(uuid.uuid4()),
         "user_id": user_id,
         "service_id": appt_data.service_id,
         "service_name": service['name'],
+        "service_duration": service_duration,  # Guardar duración para futuras consultas
         "client_name": appt_data.client_name,
         "client_phone": appt_data.client_phone,
         "client_email": appt_data.client_email,
@@ -605,6 +622,7 @@ async def create_public_appointment(slug: str, appt_data: AppointmentCreate):
     <p>Tu turno ha sido confirmado:</p>
     <ul>
         <li><strong>Servicio:</strong> {service['name']}</li>
+        <li><strong>Duración:</strong> {service_duration} minutos</li>
         <li><strong>Fecha:</strong> {appt_data.date}</li>
         <li><strong>Hora:</strong> {appt_data.time}</li>
         <li><strong>Negocio:</strong> {user['business_name']}</li>
@@ -619,6 +637,7 @@ async def create_public_appointment(slug: str, appt_data: AppointmentCreate):
         <li><strong>Cliente:</strong> {appt_data.client_name}</li>
         <li><strong>Teléfono:</strong> {appt_data.client_phone}</li>
         <li><strong>Servicio:</strong> {service['name']}</li>
+        <li><strong>Duración:</strong> {service_duration} minutos</li>
         <li><strong>Fecha:</strong> {appt_data.date}</li>
         <li><strong>Hora:</strong> {appt_data.time}</li>
     </ul>
