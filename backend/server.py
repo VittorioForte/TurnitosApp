@@ -417,6 +417,7 @@ async def create_appointment_admin(appt_data: AppointmentCreate, current_user: d
         "user_id": current_user['user_id'],
         "service_id": appt_data.service_id,
         "service_name": service['name'],
+        "service_duration": service.get('duration_minutes', 30),  # Guardar duración para futuras consultas
         "client_name": appt_data.client_name,
         "client_phone": appt_data.client_phone,
         "client_email": appt_data.client_email,
