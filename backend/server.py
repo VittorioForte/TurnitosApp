@@ -498,26 +498,64 @@ async def get_available_slots(slug: str, service_id: str, date: str):
     if not business_hours or not business_hours['is_open']:
         return {"slots": []}
     
+    # Obtener TODOS los turnos del día (no cancelados) con su duración
     existing_appointments = await db.appointments.find({
         "user_id": user_id,
         "date": date,
         "status": {"$ne": "cancelled"}
-    }, {"_id": 0}).to_list(1000)
+    }, {"_id": 0}).to_list(100)
     
-    booked_times = [appt['time'] for appt in existing_appointments]
+    # Construir lista de rangos ocupados
+    occupied_ranges = []
+    for appt in existing_appointments:
+        # Obtener la duración del servicio del turno
+        appt_service = await db.services.find_one({"service_id": appt["service_id"]}, {"_id": 0})
+        if appt_service:
+            duration = appt_service.get("duration_minutes", 30)
+            start_time = datetime.strptime(appt["time"], "%H:%M")
+            end_time = start_time + timedelta(minutes=duration)
+            occupied_ranges.append({
+                "start": start_time,
+                "end": end_time
+            })
     
     open_time = business_hours['open_time']
     close_time = business_hours['close_time']
+    service_duration = service.get('duration_minutes', 30)
     
     slots = []
     current_time = datetime.strptime(open_time, "%H:%M")
     end_time = datetime.strptime(close_time, "%H:%M")
     
+    # Generar slots cada 15 minutos para mayor flexibilidad
+    slot_interval = 15
+    
     while current_time < end_time:
-        time_str = current_time.strftime("%H:%M")
-        if time_str not in booked_times:
-            slots.append(time_str)
-        current_time += timedelta(minutes=30)
+        # Calcular el rango que ocuparía este turno
+        proposed_start = current_time
+        proposed_end = current_time + timedelta(minutes=service_duration)
+        
+        # Verificar que el turno termine antes del cierre
+        if proposed_end > end_time:
+            break
+        
+        # Verificar si este slot se superpone con algún turno existente
+        is_available = True
+        for occupied in occupied_ranges:
+            # Hay conflicto si:
+            # - El inicio propuesto está entre un turno ocupado
+            # - El fin propuesto está entre un turno ocupado
+            # - El turno propuesto envuelve completamente un turno ocupado
+            if (occupied["start"] <= proposed_start < occupied["end"] or
+                occupied["start"] < proposed_end <= occupied["end"] or
+                (proposed_start <= occupied["start"] and proposed_end >= occupied["end"])):
+                is_available = False
+                break
+        
+        if is_available:
+            slots.append(current_time.strftime("%H:%M"))
+        
+        current_time += timedelta(minutes=slot_interval)
     
     return {"slots": slots}
 
