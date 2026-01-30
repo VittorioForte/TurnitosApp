@@ -412,12 +412,38 @@ async def create_appointment_admin(appt_data: AppointmentCreate, current_user: d
     if not service:
         raise HTTPException(status_code=404, detail="Servicio no encontrado")
     
+    # Verificar disponibilidad considerando la duración del servicio
+    service_duration = service.get('duration_minutes', 30)
+    proposed_start = datetime.strptime(appt_data.time, "%H:%M")
+    proposed_end = proposed_start + timedelta(minutes=service_duration)
+    
+    # Obtener todos los turnos del día
+    existing_appointments = await db.appointments.find({
+        "user_id": current_user['user_id'],
+        "date": appt_data.date,
+        "status": {"$ne": "cancelled"}
+    }, {"_id": 0}).to_list(100)
+    
+    # Verificar solapamiento
+    for existing in existing_appointments:
+        existing_service = await db.services.find_one({"service_id": existing["service_id"]}, {"_id": 0})
+        if existing_service:
+            existing_duration = existing_service.get('duration_minutes', 30)
+            existing_start = datetime.strptime(existing["time"], "%H:%M")
+            existing_end = existing_start + timedelta(minutes=existing_duration)
+            
+            # Verificar solapamiento
+            if (existing_start <= proposed_start < existing_end or
+                existing_start < proposed_end <= existing_end or
+                (proposed_start <= existing_start and proposed_end >= existing_end)):
+                raise HTTPException(status_code=400, detail="Este horario se solapa con otro turno existente")
+    
     appointment = {
         "appointment_id": str(uuid.uuid4()),
         "user_id": current_user['user_id'],
         "service_id": appt_data.service_id,
         "service_name": service['name'],
-        "service_duration": service.get('duration_minutes', 30),  # Guardar duración para futuras consultas
+        "service_duration": service_duration,
         "client_name": appt_data.client_name,
         "client_phone": appt_data.client_phone,
         "client_email": appt_data.client_email,
