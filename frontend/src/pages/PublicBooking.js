@@ -107,10 +107,14 @@ const PublicBooking = () => {
 
   if (!businessInfo) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-50" data-testid="business-not-found">
-        <Card className="max-w-md">
-          <CardContent className="py-12 text-center">
-            <p className="text-zinc-600">Negocio no encontrado</p>
+      <div className="min-h-screen flex items-center justify-center bg-zinc-50 p-4" data-testid="business-not-found">
+        <Card className="max-w-md border-2 border-red-400">
+          <CardContent className="py-12 text-center space-y-4">
+            <div className="text-6xl">🔒</div>
+            <h2 className="text-2xl font-bold text-red-600">Negocio No Disponible</h2>
+            <p className="text-zinc-600">
+              Este negocio no está activo en este momento. Si eres el dueño, por favor renueva tu suscripción.
+            </p>
           </CardContent>
         </Card>
       </div>
