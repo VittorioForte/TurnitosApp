@@ -481,6 +481,25 @@ async def get_public_info(slug: str):
     if not user:
         raise HTTPException(status_code=404, detail="Negocio no encontrado")
     
+    # Verificar si el usuario tiene acceso activo
+    trial_ends = user['trial_ends']
+    if isinstance(trial_ends, str):
+        trial_ends = datetime.fromisoformat(trial_ends)
+    
+    # Si la suscripción está activa, verificar si no ha expirado
+    if user.get('subscription_active'):
+        sub_ends = user.get('subscription_ends')
+        if sub_ends:
+            if isinstance(sub_ends, str):
+                sub_ends = datetime.fromisoformat(sub_ends)
+            if datetime.now(timezone.utc) > sub_ends:
+                # Suscripción expirada
+                raise HTTPException(status_code=403, detail="La suscripción de este negocio ha expirado")
+    else:
+        # No tiene suscripción, verificar trial
+        if datetime.now(timezone.utc) > trial_ends:
+            raise HTTPException(status_code=403, detail="El período de prueba de este negocio ha expirado")
+    
     user_id = user['user_id']
     services = await db.services.find({"user_id": user_id, "active": True}, {"_id": 0}).to_list(1000)
     hours = await db.business_hours.find({"user_id": user_id}, {"_id": 0}).to_list(7)
