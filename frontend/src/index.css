@@ -26,3 +26,18 @@
     box-shadow: 2px 2px 0px 0px rgba(0, 0, 0, 1);
   }
 }
+
+@layer components {
+  /* Dialog overlay - fondo oscuro semitransparente */
+  [data-radix-dialog-overlay] {
+    background-color: rgba(0, 0, 0, 0.75) !important;
+    backdrop-filter: blur(4px);
+  }
+  
+  /* Dialog content - mejor contraste */
+  [data-radix-dialog-content] {
+    background-color: white !important;
+    border: 2px solid #000 !important;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4) !important;
+  }
+}
