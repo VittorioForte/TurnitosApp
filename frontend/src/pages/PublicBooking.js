@@ -39,7 +39,11 @@ const PublicBooking = () => {
       const response = await axios.get(`${BACKEND_URL}/api/public/${userId}/info`);
       setBusinessInfo(response.data);
     } catch (error) {
-      toast.error('No se pudo cargar la información del negocio');
+      if (error.response?.status === 403) {
+        toast.error(error.response?.data?.detail || 'Este negocio no está disponible');
+      } else {
+        toast.error('No se pudo cargar la información del negocio');
+      }
     } finally {
       setLoading(false);
     }
